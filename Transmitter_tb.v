@@ -53,5 +53,3 @@ module transmitter_tb();
     tx_en = 0;
   end
 endmodule
-
-

@@ -1,3 +1,75 @@
+module baud_rate_generator (
+  input clk,
+  input rst,
+  input [31:0] baud_rate,
+  output baud_clk
+);
+  reg [31:0] baud_counter;
+  reg [3:0] baud_state;
+
+  // state machine to generate baud rate clock
+  always @(posedge clk) begin
+    if (rst) begin
+      baud_state <= 4'b0000;
+    end else begin
+      case (baud_state)
+        4'b0000: begin  // idle
+          baud_counter <= baud_counter + 1;
+          if (baud_counter == baud_rate) begin
+            baud_counter <= 0;
+            baud_state <= 4'b0001;
+          end
+        end
+        4'b0001: begin  // assert baud_clk
+          baud_state <= 4'b0000;
+        end
+      endcase
+    end
+  end
+
+  assign baud_clk = (baud_state == 4'b0001);
+endmodule
+
+
+module oversampling_clock_generator (
+  input clk,
+  input rst,
+  input [31:0] baud_rate,
+  input [4:0] oversampling_factor,
+  output oversampling_clk
+);
+  reg [31:0] baud_counter;
+  reg [3:0] baud_state;
+  reg [3:0] oversamp_counter;
+
+  // state machine to generate oversampling clock
+  always @(posedge clk) begin
+    if (rst) begin
+      baud_state <= 4'b0000;
+      oversamp_counter <= 4'b0000;
+    end else begin
+      case (baud_state)
+        4'b0000: begin  // idle
+          baud_counter <= baud_counter + 1;
+          if (baud_counter == baud_rate) begin
+            baud_counter <= 0;
+            baud_state <= 4'b0001;
+          end
+        end
+        4'b0001: begin  // assert oversampling_clk
+          oversamp_counter <= oversamp_counter + 1;
+          if (oversamp_counter == oversampling_factor) begin
+            baud_state <= 4'b0000;
+            oversamp_counter <= 0;
+          end
+        end
+      endcase
+    end
+  end
+
+  assign oversampling_clk = (baud_state == 4'b0001);
+endmodule
+
 module transmitter (
   input clk,
   input rst,
@@ -93,77 +165,6 @@ module receiver (
 
 endmodule
 
-module baud_rate_generator (
-  input clk,
-  input rst,
-  input [31:0] baud_rate,
-  output baud_clk
-);
-  reg [31:0] baud_counter;
-  reg [3:0] baud_state;
-
-  // state machine to generate baud rate clock
-  always @(posedge clk) begin
-    if (rst) begin
-      baud_state <= 4'b0000;
-    end else begin
-      case (baud_state)
-        4'b0000: begin  // idle
-          baud_counter <= baud_counter + 1;
-          if (baud_counter == baud_rate) begin
-            baud_counter <= 0;
-            baud_state <= 4'b0001;
-          end
-        end
-        4'b0001: begin  // assert baud_clk
-          baud_state <= 4'b0000;
-        end
-      endcase
-    end
-  end
-
-  assign baud_clk = (baud_state == 4'b0001);
-endmodule
-
-
-module oversampling_clock_generator (
-  input clk,
-  input rst,
-  input [31:0] baud_rate,
-  input [4:0] oversampling_factor,
-  output oversampling_clk
-);
-  reg [31:0] baud_counter;
-  reg [3:0] baud_state;
-  reg [3:0] oversamp_counter;
-
-  // state machine to generate oversampling clock
-  always @(posedge clk) begin
-    if (rst) begin
-      baud_state <= 4'b0000;
-      oversamp_counter <= 4'b0000;
-    end else begin
-      case (baud_state)
-        4'b0000: begin  // idle
-          baud_counter <= baud_counter + 1;
-          if (baud_counter == baud_rate) begin
-            baud_counter <= 0;
-            baud_state <= 4'b0001;
-          end
-        end
-        4'b0001: begin  // assert oversampling_clk
-          oversamp_counter <= oversamp_counter + 1;
-          if (oversamp_counter == oversampling_factor) begin
-            baud_state <= 4'b0000;
-            oversamp_counter <= 0;
-          end
-        end
-      endcase
-    end
-  end
-
-  assign oversampling_clk = (baud_state == 4'b0001);
-endmodule
 
 //
 module slave(
